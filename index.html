@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Number Sequence Memory Game</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem;
+      background: #f0f4f8;
+    }
+    h1 {
+      margin-bottom: 1rem;
+    }
+    #display {
+      font-size: 4rem;
+      font-weight: bold;
+      margin: 2rem 0;
+      height: 1em;
+    }
+    #controls, #input-area {
+      margin-top: 1rem;
+    }
+    #sequence-input {
+      width: 300px;
+      padding: 0.5rem;
+      font-size: 1rem;
+    }
+    button {
+      padding: 0.5rem 1rem;
+      font-size: 1rem;
+      border: none;
+      border-radius: 4px;
+      background: #007bff;
+      color: white;
+      cursor: pointer;
+    }
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    #message {
+      margin-top: 1rem;
+      min-height: 1.2em;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Number Sequence Memory Game</h1>
+  <div id="display">&nbsp;</div>
+
+  <div id="controls">
+    <button id="start-btn">Start Game</button>
+  </div>
+
+  <div id="input-area" style="display:none;">
+    <input type="text" id="sequence-input" placeholder="Type numbers separated by spaces">
+    <button id="submit-btn">Submit</button>
+  </div>
+
+  <div id="message"></div>
+
+  <script>
+    const displayEl = document.getElementById('display');
+    const startBtn = document.getElementById('start-btn');
+    const inputArea = document.getElementById('input-area');
+    const inputEl = document.getElementById('sequence-input');
+    const submitBtn = document.getElementById('submit-btn');
+    const messageEl = document.getElementById('message');
+
+    let sequence = [];
+    let round = 1;
+    let seqLength = 4;
+
+    function sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    async function presentSequence() {
+      displayEl.textContent = '';
+      messageEl.textContent = 'Memorize the sequence...';
+      inputArea.style.display = 'none';
+      startBtn.disabled = true;
+
+      for (let num of sequence) {
+        displayEl.textContent = num;
+        await sleep(1000);
+        displayEl.textContent = '';
+        await sleep(300);
+      }
+
+      // Now prompt for input
+      messageEl.textContent = `Enter the ${sequence.length}-digit sequence:`;
+      inputEl.value = '';
+      inputArea.style.display = '';
+      inputEl.focus();
+    }
+
+    function generateSequence(length) {
+      const seq = [];
+      for (let i = 0; i < length; i++) {
+        seq.push(Math.floor(Math.random() * 10));
+      }
+      return seq;
+    }
+
+    function checkAnswer(input, correctSeq) {
+      const parts = input.trim().split(/\s+/);
+      if (parts.length !== correctSeq.length) return false;
+      return parts.every((p, i) => parseInt(p, 10) === correctSeq[i]);
+    }
+
+    function gameOver() {
+      messageEl.innerHTML = `
+        <span style="color: red;">Wrong!</span> 
+        You reached round ${round}.<br>
+        The correct sequence was: ${sequence.join(' ')}.
+      `;
+      displayEl.textContent = '';
+      startBtn.textContent = 'Play Again';
+      startBtn.disabled = false;
+      inputArea.style.display = 'none';
+    }
+
+    async function startRound() {
+      // generate and show
+      sequence = generateSequence(seqLength);
+      await presentSequence();
+    }
+
+    startBtn.addEventListener('click', async () => {
+      // reset state
+      round = 1;
+      seqLength = 4;
+      startBtn.disabled = true;
+      startBtn.textContent = 'Playing...';
+      messageEl.textContent = '';
+      await startRound();
+    });
+
+    submitBtn.addEventListener('click', () => {
+      const userInput = inputEl.value;
+      if (checkAnswer(userInput, sequence)) {
+        // correct
+        messageEl.innerHTML = `<span style="color: green;">Correct!</span> Moving to round ${round + 1}...`;
+        round++;
+        seqLength++;
+        setTimeout(() => {
+          startRound();
+        }, 1000);
+      } else {
+        // wrong
+        gameOver();
+      }
+    });
+
+    // allow Enter key to submit
+    inputEl.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        submitBtn.click();
+      }
+    });
+  </script>
+
+</body>
+</html>
